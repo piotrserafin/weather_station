@@ -64,6 +64,9 @@ class GpsParser {
 
         // Parse the message based on type
         String nmea = new String(buffer, 0, index);
+
+        //Log.d(TAG, "NMEA MSG: " + nmea);
+
         String[] tokens = nmea.split(FIELD_DELIMITER);
         switch (tokens[0]) {
             case GGA:

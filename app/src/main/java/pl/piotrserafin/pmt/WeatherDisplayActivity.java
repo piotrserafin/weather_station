@@ -11,9 +11,14 @@ import android.util.Log;
 
 import java.io.IOException;
 
+import pl.piotrserafin.pmt.api.OpenWeatherApiClient;
+import pl.piotrserafin.pmt.model.WeatherData;
 import pl.piotrserafin.pmt.gps.Gps;
 import pl.piotrserafin.pmt.lcd.Lcd;
 import pl.piotrserafin.pmt.utils.RpiSettings;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * Created by pserafin on 20.03.2018.
@@ -25,6 +30,11 @@ public class WeatherDisplayActivity extends Activity {
 
     public static final int UART_BAUD = 9600;
     public static final float ACCURACY = 2.5f;
+
+    //Test Data
+    public static final String WROCLAW_CITY_ID = "3081368"; //Wroclaw OW Id
+    public static final String WROCLAW_LATITUDE = "51.099998";
+    public static final String WROCLAW_LONGITUDE = "17.033331";
 
     private Lcd lcd;
     private Gps gps;
@@ -39,8 +49,28 @@ public class WeatherDisplayActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        initLcd();
-        initGps();
+        Call<WeatherData> openWeatherCall = OpenWeatherApiClient.getInstance().getCurrentWeather(WROCLAW_CITY_ID);
+        Callback<WeatherData> moviesCallback = new Callback<WeatherData>() {
+            @Override
+            public void onResponse(Call<WeatherData> openWeatherCall, Response<WeatherData> response) {
+                if (!response.isSuccessful()) {
+                    Log.d(TAG, "onResponse: Failure");
+                    return;
+                }
+                //TODO: Handel response
+                Log.d(TAG, "Success");
+            }
+
+            @Override
+            public void onFailure(Call<WeatherData> openWeatherCall, Throwable t) {
+                //TODO: Handle Failure
+                Log.d(TAG, "Failure");
+            }
+        };
+        //asynchronous call
+        openWeatherCall.enqueue(moviesCallback);
+        //initLcd();
+        //initGps();
     }
 
     private void initGps() {
@@ -66,7 +96,7 @@ public class WeatherDisplayActivity extends Activity {
         gps.register();
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                5000, 0, locationListener);
+                1000, 0, locationListener);
     }
 
     private void initLcd() {
