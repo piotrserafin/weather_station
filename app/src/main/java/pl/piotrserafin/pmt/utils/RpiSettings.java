@@ -9,6 +9,8 @@ public class RpiSettings {
         return "UART0";
     }
 
+    public static String getButtonGpioName() { return "BCM23"; }
+
     public static String getLcdGpioName(Lcd.Pin pin) {
         switch (pin) {
             case RS:

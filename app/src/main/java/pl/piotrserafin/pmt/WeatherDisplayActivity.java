@@ -8,13 +8,17 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
+
+import com.google.android.things.contrib.driver.button.Button;
+import com.google.android.things.contrib.driver.button.ButtonInputDriver;
 
 import java.io.IOException;
 
 import pl.piotrserafin.pmt.api.OpenWeatherApiClient;
-import pl.piotrserafin.pmt.model.WeatherData;
 import pl.piotrserafin.pmt.gps.Gps;
 import pl.piotrserafin.pmt.lcd.Lcd;
+import pl.piotrserafin.pmt.model.WeatherData;
 import pl.piotrserafin.pmt.utils.RpiSettings;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -39,6 +43,7 @@ public class WeatherDisplayActivity extends Activity {
     private Lcd lcd;
     private Gps gps;
 
+    private ButtonInputDriver button;
     private LocationManager locationManager;
 
     @Override
@@ -58,7 +63,7 @@ public class WeatherDisplayActivity extends Activity {
                     return;
                 }
                 //TODO: Handel response
-                Log.d(TAG, "Success");
+                Log.d(TAG,response.body().getWeather().get(0).getDescription());
             }
 
             @Override
@@ -69,8 +74,62 @@ public class WeatherDisplayActivity extends Activity {
         };
         //asynchronous call
         openWeatherCall.enqueue(moviesCallback);
-        //initLcd();
+
+        initLcd();
         //initGps();
+        initButton();
+    }
+
+    private void initButton() {
+        try {
+            Log.i(TAG, "Registering button driver " + RpiSettings.getButtonGpioName());
+
+            button = new ButtonInputDriver(
+                    RpiSettings.getButtonGpioName(),
+                    Button.LogicState.PRESSED_WHEN_LOW,
+                    KeyEvent.KEYCODE_SPACE);
+
+            button.register();
+
+        } catch (IOException e) {
+            Log.e(TAG, "Error configuring GPIO pins", e);
+        }
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_SPACE) {
+
+            Log.d(TAG, "onKeyDown");
+            // Turn on the LED
+            setLcdMessage("Key Pressed");
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_SPACE) {
+
+            Log.d(TAG, "onKeyUp");
+            // Turn off the LED
+            setLcdMessage("Key Released");
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+
+    private void setLcdMessage(String message) {
+        try {
+            lcd.clearDisplay();
+            lcd.returnHome();
+            lcd.setText(message);
+
+        } catch (IOException e) {
+            Log.e(TAG, "Exception: " + e.getMessage());
+        }
     }
 
     private void initGps() {
@@ -106,9 +165,7 @@ public class WeatherDisplayActivity extends Activity {
         try {
 
             lcd = new Lcd();
-
-            lcd.setCursor(1, 1);
-            lcd.setText("Piotr GPS");
+           // lcd.clearDisplay();
 
         } catch (IOException e) {
             Log.e(TAG, e.getMessage());
@@ -127,9 +184,9 @@ public class WeatherDisplayActivity extends Activity {
 
             try {
                 lcd.clearDisplay();
-                lcd.setCursor(1, 1);
+                lcd.setPosition(1, 1);
                 lcd.setText(String.valueOf(latitude));
-                lcd.setCursor(2, 1);
+                lcd.setPosition(2, 1);
                 lcd.setText(String.valueOf(longitude));
             } catch (IOException e) {
                 Log.e(TAG, e.getMessage());
@@ -154,9 +211,19 @@ public class WeatherDisplayActivity extends Activity {
     };
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
+    protected void onStop() {
+        Log.d(TAG, "onStop called.");
+        if (button != null) {
+            button.unregister();
+            try {
+                Log.d(TAG, "Unregistering button");
+                button.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Error closing Button driver", e);
+            } finally{
+                button = null;
+            }
+        }
         // Verify permission was granted
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -183,5 +250,12 @@ public class WeatherDisplayActivity extends Activity {
         } catch (IOException e) {
             Log.e(TAG, e.getMessage());
         }
+
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 }

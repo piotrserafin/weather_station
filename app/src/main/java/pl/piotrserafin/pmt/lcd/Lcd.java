@@ -20,44 +20,45 @@ public class Lcd implements AutoCloseable {
     private static final String TAG = Lcd.class.getSimpleName();
 
     // HD44780U Commands
-    private static final int CMD_CLEAR_DISPLAY = 0x01;
-    private static final int CMD_RETURN_HOME = 0x02;
-    private static final int CMD_ENTRY_MODE_SET = 0x04;
-    private static final int CMD_DISPLAY_CTRL = 0x08;
-    private static final int CMD_SHIFT = 0x10;
-    private static final int CMD_FUNCTION_SET = 0x20;
-    private static final int CMD_CCGRAM = 0x40;
-    private static final int CMD_CDDRAM = 0x80;
+    private static final byte CMD_CLEAR_DISPLAY = 0x01;
+    private static final byte CMD_RETURN_HOME = 0x02;
+    private static final byte CMD_ENTRY_MODE_SET = 0x04;
+    private static final byte CMD_DISPLAY_CTRL = 0x08;
+    private static final byte CMD_SHIFT = 0x10;
+    private static final byte CMD_FUNCTION_SET = 0x20;
+    private static final byte CMD_CCGRAM = 0x40;
+    private static final short CMD_CDDRAM = 0x80;
 
     //Entry register
-    private static final int REG_ENTRY_SH = 0x01;
-    private static final int REG_ENTRY_ID = 0x02;
+    private static final byte REG_ENTRY_MODE_SET_SH = 0x01;
+    private static final byte REG_ENTRY_MODE_SET_ID = 0x02;
 
-    //Control register
-    private static final int REG_CTRL_BLINK = 0x01;
-    private static final int REG_CTRL_CURSOR = 0x02;
-    private static final int REG_CTRL_DISPLAY = 0x04;
+    //Display control register
+    private static final byte REG_CTRL_B = 0x01;
+    private static final byte REG_CTRL_C = 0x02;
+    private static final byte REG_CTRL_D = 0x04;
 
-    //Function register
-    private static final int REG_FUNC_F = 0x04;
-    private static final int REG_FUNC_N = 0x08;
-    private static final int REG_FUNC_DL = 0x10;
+    //Function set register
+    private static final byte REG_FUNC_F = 0x04;
+    private static final byte REG_FUNC_N = 0x08;
+    private static final byte REG_FUNC_DL = 0x10;
 
-    private static final int CDSHIFT_RL = 0x0;
+    private static final byte CDSHIFT_RL = 0x04;
 
-    private static final byte MODE_4_BIT = 0x02;
-    private static final byte LCD_8_BIT_FUNCTION = 0x28;
 
-    private static final int LCD_SET_DDRAM_ADDR = 0x80;
-    private static final byte LCD_DDRAM_ADDR_COL1_ROW0 = 0x40;
+    private static final byte LCD_DDRAM_ADDR_COL1_ROW2 = 0x40;
 
-    private static final byte LCD_DISPLAY_ON = 0x0F;
-    private static final byte LCD_CLEAR_DISPLAY = 0x01;
-    private static final byte LCD_RETURN_HOME = 0x02;
-    private static final byte LCD_SET_ENTRY_MODE_NO_SHIFT_DISPLAY = 0x06;
+    private static final byte CLEAR_DISPLAY = CMD_CLEAR_DISPLAY;
+    private static final byte RETURN_HOME = CMD_RETURN_HOME;
+    private static final byte SET_NO_SHIFT = (CMD_ENTRY_MODE_SET | REG_ENTRY_MODE_SET_ID);
+    private static final byte SET_8_BIT_MODE = ((CMD_FUNCTION_SET | REG_FUNC_DL) >> 4);
+    private static final byte SET_4_BIT_MODE = CMD_FUNCTION_SET >> 4;
+    private static final byte SET_2_ROWS_5_X_7_DOTS = (CMD_FUNCTION_SET | REG_FUNC_N);
 
-    private static final byte ROWS = 2;
-    private static final byte COLUMNS = 16;
+    private static final int ROWS = 2;
+    private static final int COLUMNS = 16;
+
+    private static byte lcdCtrl = CMD_DISPLAY_CTRL;
 
     private Gpio resetPin;
     private Gpio enablePin;
@@ -68,8 +69,6 @@ public class Lcd implements AutoCloseable {
     }
 
     public Lcd() throws IOException {
-
-        Log.d(TAG, "Constructor");
 
         PeripheralManager service = PeripheralManager.getInstance();
 
@@ -98,23 +97,78 @@ public class Lcd implements AutoCloseable {
             throw e;
         }
 
-        writeCmd(MODE_4_BIT, true);
-        writeCmd(LCD_8_BIT_FUNCTION);
-        writeCmd(LCD_DISPLAY_ON);
-        writeCmd(LCD_SET_ENTRY_MODE_NO_SHIFT_DISPLAY);
-        writeCmd(LCD_CLEAR_DISPLAY);
+        delay(35);
+
+        //4-bit mode
+        writeCmd(SET_8_BIT_MODE, true);
+        delay(35);
+        writeCmd(SET_8_BIT_MODE, true);
+        delay(35);
+        writeCmd(SET_8_BIT_MODE, true);
+        delay(35);
+        writeCmd(SET_4_BIT_MODE, true);
+        delay(35);
+
+        //Set 2 rows, 5x7 dots
+        writeCmd(SET_2_ROWS_5_X_7_DOTS);
+        delay(35);
+
+        // Rest of the initialisation sequence
+        setDisplay(true);
+        setBlink(true);
+        setCursor(true);
+        clearDisplay();
+
+        writeCmd(SET_NO_SHIFT);
+        delay(35);
     }
 
     public void clearDisplay() throws IOException {
-        writeCmd(LCD_CLEAR_DISPLAY);
+        writeCmd(CLEAR_DISPLAY);
+        delay(5);
     }
 
     public void returnHome() throws IOException {
-        writeCmd(LCD_RETURN_HOME);
+        writeCmd(RETURN_HOME);
+        delay(5);
     }
 
-    public void setCursor(int row, int column) throws IOException {
-        writeCmd((byte) (LCD_SET_DDRAM_ADDR | ((LCD_DDRAM_ADDR_COL1_ROW0 * (row - 1)) + (column - 1))));
+    public void setDisplay(boolean state) throws IOException {
+        if (state)
+            lcdCtrl |= REG_CTRL_D;
+        else
+            lcdCtrl &= ~REG_CTRL_D;
+
+        writeCmd(lcdCtrl);
+    }
+
+    public void setCursor(boolean state) throws IOException {
+        if (state)
+            lcdCtrl |= REG_CTRL_C;
+        else
+            lcdCtrl &= ~REG_CTRL_C;
+
+        writeCmd(lcdCtrl);
+    }
+
+    public void setBlink(boolean state) throws IOException {
+        if (state)
+            lcdCtrl |= REG_CTRL_B;
+        else
+            lcdCtrl &= ~REG_CTRL_B;
+
+        writeCmd(lcdCtrl);
+    }
+
+
+    public void setPosition(int row, int column) throws IOException {
+
+        if ((row >= ROWS) || (row < 0))
+            row = 0;
+        if ((column >= COLUMNS) || (column < 0))
+            column = 0;
+
+        writeCmd((byte) (CMD_CDDRAM | ((LCD_DDRAM_ADDR_COL1_ROW2 * (row)) + (column))));
     }
 
     public void setText(String val) throws IOException {
@@ -152,11 +206,11 @@ public class Lcd implements AutoCloseable {
             Gpio pin = dataBus.get(i);
             pin.setValue(((value >> i & 0x01) != 0));
         }
-        pulseEnable();
+        strobe();
         delay(1);
     }
 
-    private void pulseEnable() throws IOException {
+    private void strobe() throws IOException {
         enablePin.setValue(false);
         delay(1);
         enablePin.setValue(true);
