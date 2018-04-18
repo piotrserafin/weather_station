@@ -1,8 +1,6 @@
 package pl.piotrserafin.pmt;
 
-import android.Manifest;
 import android.app.Activity;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -16,6 +14,8 @@ import com.google.android.things.contrib.driver.button.ButtonInputDriver;
 import java.io.IOException;
 
 import pl.piotrserafin.pmt.api.OpenWeatherApiClient;
+import pl.piotrserafin.pmt.fsm.State;
+import pl.piotrserafin.pmt.fsm.StateContext;
 import pl.piotrserafin.pmt.gps.Gps;
 import pl.piotrserafin.pmt.lcd.Lcd;
 import pl.piotrserafin.pmt.model.WeatherData;
@@ -43,8 +43,18 @@ public class WeatherDisplayActivity extends Activity {
     private Lcd lcd;
     private Gps gps;
 
+    private Call<WeatherData> openWeatherCall;
+    private Callback<WeatherData> moviesCallback;
+
     private ButtonInputDriver button;
     private LocationManager locationManager;
+
+    private double latitude;
+    private double longitude;
+
+    private WeatherData weatherData;
+
+    private StateContext stateContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,30 +64,40 @@ public class WeatherDisplayActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Call<WeatherData> openWeatherCall = OpenWeatherApiClient.getInstance().getCurrentWeather(WROCLAW_CITY_ID);
-        Callback<WeatherData> moviesCallback = new Callback<WeatherData>() {
-            @Override
-            public void onResponse(Call<WeatherData> openWeatherCall, Response<WeatherData> response) {
-                if (!response.isSuccessful()) {
-                    Log.d(TAG, "onResponse: Failure");
-                    return;
-                }
-                //TODO: Handel response
-                Log.d(TAG,response.body().getWeather().get(0).getDescription());
-            }
+        stateContext = new StateContext(new StateStart());
 
-            @Override
-            public void onFailure(Call<WeatherData> openWeatherCall, Throwable t) {
-                //TODO: Handle Failure
-                Log.d(TAG, "Failure");
-            }
-        };
-        //asynchronous call
-        openWeatherCall.enqueue(moviesCallback);
+        //StateStart -> StateInit
+        stateContext.takeAction();
+    }
 
-        initLcd();
-        //initGps();
-        initButton();
+    private void initLcd() {
+
+        Log.d(TAG, "initLcd");
+
+        try {
+
+            lcd = new Lcd();
+
+        } catch (IOException e) {
+            Log.e(TAG, e.getMessage());
+        }
+    }
+
+    private void initGps() {
+
+        Log.d(TAG, "initGps");
+
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+        try {
+            gps = new Gps(this, RpiSettings.getUartName(), UART_BAUD, ACCURACY);
+        } catch (IOException e) {
+            Log.w(TAG, "Unable to open Gps", e);
+        }
+
+
+        //StateInit -> StateFetchGpsData
+        stateContext.takeAction();
     }
 
     private void initButton() {
@@ -89,147 +109,304 @@ public class WeatherDisplayActivity extends Activity {
                     Button.LogicState.PRESSED_WHEN_LOW,
                     KeyEvent.KEYCODE_SPACE);
 
-            button.register();
-
         } catch (IOException e) {
             Log.e(TAG, "Error configuring GPIO pins", e);
         }
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_SPACE) {
+    private void initWeatherApiClient() {
 
-            Log.d(TAG, "onKeyDown");
-            // Turn on the LED
-            setLcdMessage("Key Pressed");
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
+        moviesCallback = new Callback<WeatherData>() {
+
+            @Override
+            public void onResponse(Call<WeatherData> openWeatherCall, Response<WeatherData> response) {
+                if (!response.isSuccessful()) {
+                    Log.d(TAG, "onResponse: Failure");
+                    return;
+                }
+                weatherData = response.body();
+
+                stateContext.takeAction();
+            }
+
+            @Override
+            public void onFailure(Call<WeatherData> openWeatherCall, Throwable t) {
+                setLcdClear();
+                setLcdPosition(0,0);
+                setLcdMessage("Failed to fetch");
+                setLcdPosition(1,0);
+                setLcdMessage("Weather Data...");
+
+                stateContext.setState(new StateStop());
+                stateContext.takeAction();
+            }
+        };
+    }
+
+    private void startFetchingGpsData() {
+        gps.register();
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                5000, 0, locationListener);
+    }
+
+    private void stopFetchingGpsData() {
+        locationManager.removeUpdates(locationListener);
+        gps.unregister();
+    }
+
+    private void startFetchingWeatherData() {
+
+        openWeatherCall = OpenWeatherApiClient
+                .getInstance()
+                .getCurrentWeather(
+                        Double.toString(latitude),
+                        Double.toString(longitude));
+
+        //asynchronous call
+        openWeatherCall.enqueue(moviesCallback);
+    }
+
+    private void stopFetchingWeatherData() {
+        openWeatherCall.cancel();
+    }
+
+    private void startButtonListener() {
+        button.register();
+    }
+
+    private void stopButtonListener() {
+        button.unregister();
     }
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_SPACE) {
 
-            Log.d(TAG, "onKeyUp");
-            // Turn off the LED
-            setLcdMessage("Key Released");
+            stateContext.takeAction();
+
             return true;
         }
         return super.onKeyUp(keyCode, event);
     }
 
 
-    private void setLcdMessage(String message) {
+    private LocationListener locationListener = new LocationListener() {
+
+        @Override
+        public void onLocationChanged(Location location) {
+            latitude = location.getLatitude();
+            longitude = location.getLongitude();
+
+            // StateFetchGpsData -> StateFetchWeatherData
+            stateContext.takeAction();
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+        @Override
+        public void onProviderEnabled(String provider) {}
+
+        @Override
+        public void onProviderDisabled(String provider) {}
+    };
+
+    /////////////////////////////LCD stuff/////////////////////////
+    private void setLcdClear() {
         try {
             lcd.clearDisplay();
-            lcd.returnHome();
-            lcd.setText(message);
-
         } catch (IOException e) {
             Log.e(TAG, "Exception: " + e.getMessage());
         }
     }
 
-    private void initGps() {
-
-        Log.d(TAG, "initGps");
-
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-        // We need permission to get location updates
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            // A problem occurred auto-granting the permission
-            Log.d(TAG, "No permission");
-            return;
-        }
-
+    private void setLcdPosition(int row, int col) {
         try {
-            gps = new Gps (this, RpiSettings.getUartName(), UART_BAUD, ACCURACY);
+            lcd.setPosition(row, col);
         } catch (IOException e) {
-            Log.w(TAG, "Unable to open Gps", e);
+            Log.e(TAG, "Exception: " + e.getMessage());
         }
-
-        gps.register();
-
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                1000, 0, locationListener);
     }
 
-    private void initLcd() {
+    private void setLcdMessage(String message) {
+        try {
+            lcd.setText(message);
+        } catch (IOException e) {
+            Log.e(TAG, "Exception: " + e.getMessage());
+        }
+    }
+    ///////////////////////////////////////////////////////////////
 
-        Log.d(TAG, "initLcd");
+    private void sleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Exception: " + e.getMessage());
+        }
+    }
+
+    ///////////////////////FSM States!!!///////////////////////////
+    public class StateStart extends State {
+
+        @Override
+        public void takeAction(StateContext stateContext) {
+            stateContext.setState(new StateInit());
+            initWeatherApiClient();
+            initButton();
+            initLcd();
+            initGps();
+        }
+    }
+
+    public class StateInit extends State {
+
+        @Override
+        public void takeAction(StateContext stateContext) {
+            stateContext.setState(new StateFetchGpsData());
+
+            setLcdClear();
+            setLcdPosition(0,0);
+            setLcdMessage("Waiting for");
+            setLcdPosition(1,0);
+            setLcdMessage("GPS Data...");
+
+            sleep(3000);
+
+            startFetchingGpsData();
+        }
+    }
+
+    public class StateFetchGpsData extends State {
+
+        @Override
+        public void takeAction(StateContext stateContext) {
+            stateContext.setState(new StateFetchWeatherData());
+
+            stopFetchingGpsData();
+
+            setLcdClear();
+            setLcdPosition(0,0);
+            setLcdMessage("Waiting for");
+            setLcdPosition(1,0);
+            setLcdMessage("Weather Data...");
+
+            sleep(3000);
+
+            startFetchingWeatherData();
+        }
+    }
+
+    public class StateFetchWeatherData extends State {
+
+        @Override
+        public void takeAction(StateContext stateContext) {
+            stateContext.setState(new StateShowWeatherDataName());
+            stopFetchingWeatherData();
+
+            sleep(2000);
+
+            setLcdClear();
+            setLcdPosition(0,0);
+            setLcdMessage("Weather Ready");
+            setLcdPosition(1,0);
+            setLcdMessage("Press Button");
+            startButtonListener();
+        }
+    }
+
+    public class StateShowWeatherDataName extends State {
+
+        @Override
+        public void takeAction(StateContext stateContext) {
+            stateContext.setState(new StateShowWeatherDataCoord());
+            setLcdClear();
+            setLcdPosition(0,0);
+            setLcdMessage("City:");
+            setLcdPosition(1,0);
+            setLcdMessage(weatherData.getName());
+        }
+    }
+
+    public class StateShowWeatherDataCoord extends State {
+
+        @Override
+        public void takeAction(StateContext stateContext) {
+            stateContext.setState(new StateShowWeatherDataDesc());
+            setLcdClear();
+            setLcdPosition(0,0);
+            setLcdMessage("Coordinates:");
+            setLcdPosition(1,0);
+            setLcdMessage(String.format("%5.2f %5.2f",
+                    weatherData.getCoord().getLat(),
+                    weatherData.getCoord().getLon()));
+        }
+    }
+
+    public class StateShowWeatherDataDesc extends State {
+
+        @Override
+        public void takeAction(StateContext stateContext) {
+            stateContext.setState(new StateShowWeatherTemp());
+            setLcdClear();
+            setLcdPosition(0,0);
+            setLcdMessage("Description:");
+            setLcdPosition(1,0);
+            setLcdMessage(weatherData.getWeather().get(0).getDescription());
+        }
+    }
+
+    public class StateShowWeatherTemp extends State {
+
+        @Override
+        public void takeAction(StateContext stateContext) {
+            stateContext.setState(new StateShowWeatherDataPressureAndHumidity());
+            setLcdClear();
+            setLcdPosition(0,0);
+            setLcdMessage("Temp: ");
+            setLcdPosition(1,0);
+            setLcdMessage(String.format("%5.2f C",weatherData.getMain().getTemp() - 273.0));
+        }
+    }
+
+    public class StateShowWeatherDataPressureAndHumidity extends State {
+
+        @Override
+        public void takeAction(StateContext stateContext) {
+            stateContext.setState(new StateShowWeatherDataName());
+            setLcdClear();
+            setLcdPosition(0,0);
+            setLcdMessage(String.format("P: %6.2f hPa", weatherData.getMain().getPressure()));
+            setLcdPosition(1,0);
+            setLcdMessage(String.format("H: %5.2f %%",weatherData.getMain().getHumidity()));
+        }
+    }
+
+    public class StateStop extends State {
+
+        @Override
+        public void takeAction(StateContext stateContext) {
+            stopButtonListener();
+            closeButton();
+            closeGps();
+            closeLcd();
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////
+
+    private void closeLcd() {
 
         try {
-
-            lcd = new Lcd();
-           // lcd.clearDisplay();
-
+            if (lcd != null) {
+                lcd.clearDisplay();
+                lcd.close();
+            }
         } catch (IOException e) {
             Log.e(TAG, e.getMessage());
         }
     }
 
-    private LocationListener locationListener = new LocationListener() {
-
-        @Override
-        public void onLocationChanged(Location location) {
-
-            double latitude = location.getLatitude();
-            double longitude = location.getLongitude();
-
-            Log.d(TAG, "GPS: (" + String.valueOf(latitude) + " " + String.valueOf(longitude) + ")");
-
-            try {
-                lcd.clearDisplay();
-                lcd.setPosition(1, 1);
-                lcd.setText(String.valueOf(latitude));
-                lcd.setPosition(2, 1);
-                lcd.setText(String.valueOf(longitude));
-            } catch (IOException e) {
-                Log.e(TAG, e.getMessage());
-            }
-        }
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-            Log.d(TAG, provider);
-            Log.d(TAG, "Status: " + provider);
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-            Log.d(TAG, provider);
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-            Log.d(TAG, provider);
-        }
-    };
-
-    @Override
-    protected void onStop() {
-        Log.d(TAG, "onStop called.");
-        if (button != null) {
-            button.unregister();
-            try {
-                Log.d(TAG, "Unregistering button");
-                button.close();
-            } catch (IOException e) {
-                Log.e(TAG, "Error closing Button driver", e);
-            } finally{
-                button = null;
-            }
-        }
-        // Verify permission was granted
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "No permission");
-            return;
-        }
+    private void closeGps() {
 
         if (gps != null) {
             // Unregister components
@@ -242,14 +419,27 @@ public class WeatherDisplayActivity extends Activity {
                 Log.w(TAG, "Unable to close GPS driver", e);
             }
         }
+    }
 
-        try {
-            if (lcd != null) {
-                lcd.close();
+    private void closeButton() {
+        if (button != null) {
+            try {
+                Log.d(TAG, "Unregistering button");
+                button.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Error closing Button driver", e);
+            } finally {
+                button = null;
             }
-        } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
         }
+    }
+
+    @Override
+    protected void onStop() {
+        Log.d(TAG, "onStop called.");
+
+        stateContext.setState(new StateStop());
+        stateContext.takeAction();
 
         super.onStop();
     }

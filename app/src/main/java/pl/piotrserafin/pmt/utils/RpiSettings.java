@@ -3,7 +3,7 @@ package pl.piotrserafin.pmt.utils;
 import pl.piotrserafin.pmt.lcd.Lcd;
 
 public class RpiSettings {
-    private static final String DEVICE_RPI3 = "rpi3";
+    private static final String TAG = "rpi3";
 
     public static String getUartName() {
         return "UART0";
@@ -26,7 +26,7 @@ public class RpiSettings {
             case D7:
                 return "BCM21";
             default:
-                throw new IllegalArgumentException("Unknown Pin" + pin.name());
+                throw new IllegalArgumentException(TAG + ("Unknown Pin" + pin.name() + ")"));
         }
     }
 }

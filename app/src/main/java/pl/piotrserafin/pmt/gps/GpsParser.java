@@ -79,7 +79,6 @@ class GpsParser {
                 handleRmcMsg(tokens);
                 break;
             default:
-                Log.d(TAG, "Ignored message");
                 // Ignore the message
         }
     }
@@ -112,8 +111,6 @@ class GpsParser {
 
     private void handleGgaMsg(String[] nmea) {
 
-        Log.d(TAG, "handleGgaMsg");
-
         if (nmea.length < 12) {
             Log.w(TAG, "Invalid GGA_MSG length");
             return;
@@ -136,8 +133,6 @@ class GpsParser {
 
     private void handleGllMsg(String[] nmea) {
 
-        Log.d(TAG, "handleGllMsg");
-
         if (nmea.length < 7) {
             Log.w(TAG, "Invalid GLL_MSG length");
             return;
@@ -157,8 +152,6 @@ class GpsParser {
 
     private void handleRmcMsg(String[] nmea) {
 
-        Log.d(TAG, "handleRmcMsg");
-
         if (nmea.length < 11) {
             Log.w(TAG, "Invalid RMC_MSG length");
             return;
@@ -177,14 +170,12 @@ class GpsParser {
     }
 
     private void postSatelliteStatus(boolean active, int satellites) {
-        Log.d(TAG, "postSatelliteStatus");
         if (gpsCallback != null) {
             gpsCallback.onSatelliteStatusUpdate(active, satellites);
         }
     }
 
     private void postPosition(long timestamp, double latitude, double longitude) {
-        Log.d(TAG, "postPosition");
         if (gpsCallback != null) {
             gpsCallback.onPositionUpdate(timestamp, latitude, longitude);
         }

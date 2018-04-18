@@ -115,8 +115,8 @@ public class Lcd implements AutoCloseable {
 
         // Rest of the initialisation sequence
         setDisplay(true);
-        setBlink(true);
-        setCursor(true);
+        setBlink(false);
+        setCursor(false);
         clearDisplay();
 
         writeCmd(SET_NO_SHIFT);
