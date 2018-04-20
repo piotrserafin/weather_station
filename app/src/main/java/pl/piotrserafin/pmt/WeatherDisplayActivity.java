@@ -37,8 +37,8 @@ public class WeatherDisplayActivity extends Activity {
 
     //Test Data
     public static final String WROCLAW_CITY_ID = "3081368"; //Wroclaw OW Id
-    public static final String WROCLAW_LATITUDE = "51.099998";
-    public static final String WROCLAW_LONGITUDE = "17.033331";
+    public static final double WROCLAW_LATITUDE = 51.099998;
+    public static final double WROCLAW_LONGITUDE = 17.033331;
 
     private Lcd lcd;
     private Gps gps;
@@ -55,6 +55,8 @@ public class WeatherDisplayActivity extends Activity {
     private WeatherData weatherData;
 
     private StateContext stateContext;
+
+    private boolean testData = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -182,6 +184,12 @@ public class WeatherDisplayActivity extends Activity {
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_SPACE) {
 
+            if(stateContext.getState().getClass() == StateFetchGpsData.class) {
+                latitude = WROCLAW_LATITUDE;
+                longitude = WROCLAW_LONGITUDE;
+                testData = true;
+            }
+
             stateContext.takeAction();
 
             return true;
@@ -273,6 +281,7 @@ public class WeatherDisplayActivity extends Activity {
             sleep(3000);
 
             startFetchingGpsData();
+            startButtonListener();
         }
     }
 
@@ -283,6 +292,14 @@ public class WeatherDisplayActivity extends Activity {
             stateContext.setState(new StateFetchWeatherData());
 
             stopFetchingGpsData();
+            stopButtonListener();
+
+            if(testData) {
+                setLcdClear();
+                setLcdPosition(0,0);
+                setLcdMessage("Test Data Used");
+                sleep(2000);
+            }
 
             setLcdClear();
             setLcdPosition(0,0);
