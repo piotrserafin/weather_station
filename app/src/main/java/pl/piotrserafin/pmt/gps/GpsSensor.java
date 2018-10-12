@@ -42,7 +42,7 @@ public class GpsSensor implements AutoCloseable {
     private void init(UartDevice device, int baudRate, Handler handler) throws IOException {
         uartDevice = device;
         uartDevice.setBaudrate(baudRate);
-        uartDevice.registerUartDeviceCallback(gpsCallback, handler);
+        uartDevice.registerUartDeviceCallback(handler, gpsCallback);
         gpsParser = new GpsParser();
     }
 

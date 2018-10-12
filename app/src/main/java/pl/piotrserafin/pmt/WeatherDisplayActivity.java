@@ -64,7 +64,6 @@ public class WeatherDisplayActivity extends Activity {
         Log.d(TAG, "onCreate");
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
         stateContext = new StateContext(new StateStart());
 

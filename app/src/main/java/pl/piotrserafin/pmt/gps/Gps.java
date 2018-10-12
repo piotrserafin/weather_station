@@ -6,7 +6,7 @@ import android.location.LocationManager;
 import android.os.Handler;
 
 import com.google.android.things.userdriver.UserDriverManager;
-import com.google.android.things.userdriver.location.GpsDriver;
+import com.google.android.things.userdriver.location.GnssDriver;
 
 import java.io.IOException;
 
@@ -20,7 +20,7 @@ public class Gps implements AutoCloseable {
     private static final String TAG = Gps.class.getSimpleName();
 
     private Context context;
-    private GpsDriver gpsDriver;
+    private GnssDriver gnssDriver;
     private GpsSensor gpsSensor;
 
     public Gps(Context context, String uartName, int baudRate,
@@ -54,7 +54,7 @@ public class Gps implements AutoCloseable {
         @Override
         public void onPositionUpdate(long timestamp,
                                         double latitude, double longitude) {
-            if (gpsDriver != null) {
+            if (gnssDriver != null) {
                 lastLocation.setTime(timestamp);
 
                 // We cannot compute accuracy from NMEA data alone.
@@ -66,25 +66,25 @@ public class Gps implements AutoCloseable {
 
                 // Is the lastLocation update ready to send?
                 if (lastLocation.hasAccuracy() && lastLocation.getTime() != 0) {
-                    gpsDriver.reportLocation(lastLocation);
+                    gnssDriver.reportLocation(lastLocation);
                 }
             }
         }
     };
 
     public void register() {
-        if (gpsDriver == null) {
+        if (gnssDriver == null) {
             UserDriverManager manager = UserDriverManager.getInstance();
-            gpsDriver = new GpsDriver();
-            manager.registerGpsDriver(gpsDriver);
+            gnssDriver = new GnssDriver();
+            manager.registerGnssDriver(gnssDriver);
         }
     }
 
     public void unregister() {
-        if (gpsDriver != null) {
+        if (gnssDriver != null) {
             UserDriverManager manager = UserDriverManager.getInstance();
-            manager.unregisterGpsDriver();
-            gpsDriver = null;
+            manager.unregisterGnssDriver();
+            gnssDriver = null;
         }
     }
 
