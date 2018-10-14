@@ -19,18 +19,18 @@ import pl.piotrserafin.pmt.fsm.StateContext;
 import pl.piotrserafin.pmt.gps.Gps;
 import pl.piotrserafin.pmt.lcd.Lcd;
 import pl.piotrserafin.pmt.model.WeatherData;
+import pl.piotrserafin.pmt.sensor.EnvironmentalSensor;
 import pl.piotrserafin.pmt.utils.RpiSettings;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import timber.log.Timber;
 
 /**
  * Created by pserafin on 20.03.2018.
  */
 
 public class WeatherDisplayActivity extends Activity {
-
-    private static final String TAG = WeatherDisplayActivity.class.getSimpleName();
 
     public static final int UART_BAUD = 9600;
     public static final float ACCURACY = 2.5f;
@@ -42,6 +42,7 @@ public class WeatherDisplayActivity extends Activity {
 
     private Lcd lcd;
     private Gps gps;
+    private EnvironmentalSensor sensor;
 
     private Call<WeatherData> openWeatherCall;
     private Callback<WeatherData> moviesCallback;
@@ -61,8 +62,6 @@ public class WeatherDisplayActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        Log.d(TAG, "onCreate");
-
         super.onCreate(savedInstanceState);
 
         stateContext = new StateContext(new StateStart());
@@ -73,29 +72,28 @@ public class WeatherDisplayActivity extends Activity {
 
     private void initLcd() {
 
-        Log.d(TAG, "initLcd");
+        Timber.d("initLcd");
 
         try {
 
             lcd = new Lcd();
 
         } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
+            Timber.e(e);
         }
     }
 
     private void initGps() {
 
-        Log.d(TAG, "initGps");
+        Timber.d("initGps");
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
         try {
             gps = new Gps(this, RpiSettings.getUartName(), UART_BAUD, ACCURACY);
         } catch (IOException e) {
-            Log.w(TAG, "Unable to open Gps", e);
+            Timber.e(e);
         }
-
 
         //StateInit -> StateFetchGpsData
         stateContext.takeAction();
@@ -103,7 +101,7 @@ public class WeatherDisplayActivity extends Activity {
 
     private void initButton() {
         try {
-            Log.i(TAG, "Registering button driver " + RpiSettings.getButtonGpioName());
+            Timber.d("Registering button driver " + RpiSettings.getButtonGpioName());
 
             button = new ButtonInputDriver(
                     RpiSettings.getButtonGpioName(),
@@ -111,7 +109,7 @@ public class WeatherDisplayActivity extends Activity {
                     KeyEvent.KEYCODE_SPACE);
 
         } catch (IOException e) {
-            Log.e(TAG, "Error configuring GPIO pins", e);
+            Timber.d(e);
         }
     }
 
@@ -122,7 +120,7 @@ public class WeatherDisplayActivity extends Activity {
             @Override
             public void onResponse(Call<WeatherData> openWeatherCall, Response<WeatherData> response) {
                 if (!response.isSuccessful()) {
-                    Log.d(TAG, "onResponse: Failure");
+                    Timber.d("onResponse: Failure");
                     return;
                 }
                 weatherData = response.body();
@@ -223,7 +221,7 @@ public class WeatherDisplayActivity extends Activity {
         try {
             lcd.clearDisplay();
         } catch (IOException e) {
-            Log.e(TAG, "Exception: " + e.getMessage());
+            Timber.e(e);
         }
     }
 
@@ -231,7 +229,7 @@ public class WeatherDisplayActivity extends Activity {
         try {
             lcd.setPosition(row, col);
         } catch (IOException e) {
-            Log.e(TAG, "Exception: " + e.getMessage());
+            Timber.e(e);
         }
     }
 
@@ -239,7 +237,7 @@ public class WeatherDisplayActivity extends Activity {
         try {
             lcd.setText(message);
         } catch (IOException e) {
-            Log.e(TAG, "Exception: " + e.getMessage());
+            Timber.e(e);
         }
     }
     ///////////////////////////////////////////////////////////////
@@ -248,7 +246,7 @@ public class WeatherDisplayActivity extends Activity {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
-            Log.e(TAG, "Exception: " + e.getMessage());
+            Timber.e(e);
         }
     }
 
@@ -418,7 +416,7 @@ public class WeatherDisplayActivity extends Activity {
                 lcd.close();
             }
         } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
+            Timber.e(e);
         }
     }
 
@@ -432,7 +430,7 @@ public class WeatherDisplayActivity extends Activity {
             try {
                 gps.close();
             } catch (IOException e) {
-                Log.w(TAG, "Unable to close GPS driver", e);
+                Timber.e(e);
             }
         }
     }
@@ -440,10 +438,10 @@ public class WeatherDisplayActivity extends Activity {
     private void closeButton() {
         if (button != null) {
             try {
-                Log.d(TAG, "Unregistering button");
+                Timber.d("Unregistering button");
                 button.close();
             } catch (IOException e) {
-                Log.e(TAG, "Error closing Button driver", e);
+                Timber.e(e);
             } finally {
                 button = null;
             }
@@ -452,7 +450,7 @@ public class WeatherDisplayActivity extends Activity {
 
     @Override
     protected void onStop() {
-        Log.d(TAG, "onStop called.");
+        Timber.d("onStop called.");
 
         stateContext.setState(new StateStop());
         stateContext.takeAction();

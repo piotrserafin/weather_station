@@ -29,8 +29,15 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
 
+    // Drivers
     implementation 'com.google.android.things:androidthings:1.0'
     implementation 'com.google.android.things.contrib:driver-button:1.0'
+    implementation 'com.google.android.things.contrib:driver-bmx280:1.0'
+
+    // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.4.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
+
+    //Timber logging
+    implementation 'com.jakewharton.timber:timber:4.7.1'
 }
