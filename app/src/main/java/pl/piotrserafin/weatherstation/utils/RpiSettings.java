@@ -29,4 +29,6 @@ public class RpiSettings {
                 throw new IllegalArgumentException(TAG + ("Unknown Pin" + pin.name() + ")"));
         }
     }
+
+    public static String getI2cBusName() { return "I2C1"; }
 }
