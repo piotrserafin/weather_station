@@ -1,4 +1,4 @@
-package pl.piotrserafin.pmt.gps;
+package pl.piotrserafin.weatherstation.gps;
 
 import android.content.Context;
 import android.location.Location;

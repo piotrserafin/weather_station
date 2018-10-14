@@ -1,11 +1,10 @@
-package pl.piotrserafin.pmt;
+package pl.piotrserafin.weatherstation;
 
 import android.app.Activity;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 
 import com.google.android.things.contrib.driver.button.Button;
@@ -13,14 +12,14 @@ import com.google.android.things.contrib.driver.button.ButtonInputDriver;
 
 import java.io.IOException;
 
-import pl.piotrserafin.pmt.api.OpenWeatherApiClient;
-import pl.piotrserafin.pmt.fsm.State;
-import pl.piotrserafin.pmt.fsm.StateContext;
-import pl.piotrserafin.pmt.gps.Gps;
-import pl.piotrserafin.pmt.lcd.Lcd;
-import pl.piotrserafin.pmt.model.WeatherData;
-import pl.piotrserafin.pmt.sensor.EnvironmentalSensor;
-import pl.piotrserafin.pmt.utils.RpiSettings;
+import pl.piotrserafin.weatherstation.api.OpenWeatherApiClient;
+import pl.piotrserafin.weatherstation.fsm.State;
+import pl.piotrserafin.weatherstation.fsm.StateContext;
+import pl.piotrserafin.weatherstation.gps.Gps;
+import pl.piotrserafin.weatherstation.lcd.Lcd;
+import pl.piotrserafin.weatherstation.model.WeatherData;
+import pl.piotrserafin.weatherstation.sensor.EnvironmentalSensor;
+import pl.piotrserafin.weatherstation.utils.RpiSettings;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;

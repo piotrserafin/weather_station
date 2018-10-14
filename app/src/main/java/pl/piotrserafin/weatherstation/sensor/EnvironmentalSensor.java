@@ -1,4 +1,4 @@
-package pl.piotrserafin.pmt.sensor;
+package pl.piotrserafin.weatherstation.sensor;
 
 import com.google.android.things.contrib.driver.bmx280.Bmx280;
 

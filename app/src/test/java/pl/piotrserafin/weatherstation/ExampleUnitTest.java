@@ -1,4 +1,4 @@
-package pl.piotrserafin.pmt;
+package pl.piotrserafin.weatherstation;
 
 import org.junit.Test;
 

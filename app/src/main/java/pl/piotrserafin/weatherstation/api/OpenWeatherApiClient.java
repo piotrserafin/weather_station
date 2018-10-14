@@ -1,7 +1,7 @@
-package pl.piotrserafin.pmt.api;
+package pl.piotrserafin.weatherstation.api;
 
 import okhttp3.OkHttpClient;
-import pl.piotrserafin.pmt.model.WeatherData;
+import pl.piotrserafin.weatherstation.model.WeatherData;
 import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;

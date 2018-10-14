@@ -1,4 +1,4 @@
-package pl.piotrserafin.pmt.model;
+package pl.piotrserafin.weatherstation.model;
 
 public class Wind {
 

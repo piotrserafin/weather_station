@@ -1,4 +1,4 @@
-package pl.piotrserafin.pmt.model;
+package pl.piotrserafin.weatherstation.model;
 
 import java.util.ArrayList;
 import java.util.List;

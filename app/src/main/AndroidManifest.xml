@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="pl.piotrserafin.pmt">
+    package="pl.piotrserafin.weatherstation">
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
@@ -10,13 +10,13 @@
     <uses-permission android:name="com.google.android.things.permission.USE_PERIPHERAL_IO" />
 
     <application
-        android:name=".PmtApp"
+        android:name="pl.piotrserafin.weatherstation.WeatherStationApp"
         android:label="@string/app_name"
         tools:ignore="GoogleAppIndexingWarning">
 
         <uses-library android:name="com.google.android.things"/>
 
-        <activity android:name=".WeatherDisplayActivity">
+        <activity android:name="pl.piotrserafin.weatherstation.WeatherDisplayActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 

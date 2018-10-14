@@ -1,4 +1,4 @@
-package pl.piotrserafin.pmt.gps;
+package pl.piotrserafin.weatherstation.gps;
 
 import android.text.format.DateFormat;
 import android.util.Log;

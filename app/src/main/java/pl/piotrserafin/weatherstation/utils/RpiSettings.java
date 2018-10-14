@@ -1,6 +1,6 @@
-package pl.piotrserafin.pmt.utils;
+package pl.piotrserafin.weatherstation.utils;
 
-import pl.piotrserafin.pmt.lcd.Lcd;
+import pl.piotrserafin.weatherstation.lcd.Lcd;
 
 public class RpiSettings {
     private static final String TAG = "rpi3";

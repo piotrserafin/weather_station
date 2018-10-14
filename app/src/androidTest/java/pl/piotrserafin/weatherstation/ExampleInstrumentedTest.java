@@ -1,4 +1,4 @@
-package pl.piotrserafin.pmt;
+package pl.piotrserafin.weatherstation;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

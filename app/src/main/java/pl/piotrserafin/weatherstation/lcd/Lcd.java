@@ -1,4 +1,4 @@
-package pl.piotrserafin.pmt.lcd;
+package pl.piotrserafin.weatherstation.lcd;
 
 import android.util.Log;
 
@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import pl.piotrserafin.pmt.utils.RpiSettings;
+import pl.piotrserafin.weatherstation.utils.RpiSettings;
 
 /**
  * Created by pserafin on 20.03.2018.

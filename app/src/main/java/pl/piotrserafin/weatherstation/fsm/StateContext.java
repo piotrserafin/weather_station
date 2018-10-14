@@ -1,4 +1,4 @@
-package pl.piotrserafin.pmt.fsm;
+package pl.piotrserafin.weatherstation.fsm;
 
 public class StateContext {
     private State state;

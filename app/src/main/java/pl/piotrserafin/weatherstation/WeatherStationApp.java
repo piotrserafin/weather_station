@@ -1,10 +1,10 @@
-package pl.piotrserafin.pmt;
+package pl.piotrserafin.weatherstation;
 
 import android.app.Application;
 
 import timber.log.Timber;
 
-public class PmtApp extends Application {
+public class WeatherStationApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();

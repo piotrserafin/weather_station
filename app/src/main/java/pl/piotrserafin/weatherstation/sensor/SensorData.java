@@ -1,4 +1,4 @@
-package pl.piotrserafin.pmt.sensor;
+package pl.piotrserafin.weatherstation.sensor;
 
 public class SensorData {
     private long timestamp;
