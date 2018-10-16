@@ -1,7 +1,6 @@
 package pl.piotrserafin.weatherstation.gps;
 
 import android.text.format.DateFormat;
-import android.util.Log;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -10,13 +9,13 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import timber.log.Timber;
+
 /**
  * Created by pserafin on 10.04.2018.
  */
 
 class GpsParser {
-
-    private static final String TAG = GpsParser.class.getSimpleName();
 
     // From https://en.wikipedia.org/wiki/NMEA_0183
     private static final byte START_DELIMITER = 0x24;
@@ -51,14 +50,14 @@ class GpsParser {
 
         // Check buffer
         if (buffer == null || buffer.length < 1) {
-            Log.w(TAG, "Buffer invalid");
+            Timber.w("Buffer invalid");
             return;
         }
 
         // Check checksum
         int index = validateChecksum(buffer);
         if (index < 0) {
-            Log.w(TAG, "Checksum invalid");
+            Timber.w("Checksum invalid");
             return;
         }
 
@@ -96,13 +95,13 @@ class GpsParser {
 
         // Index is pointing to checksum start
         if (index >= (buffer.length - 2)) {
-            Log.w(TAG, "Checksum missing from incoming message");
+            Timber.w("Checksum missing from incoming message");
             return -1;
         }
 
         int checkSum = convertAsciiByte(buffer[index+1], buffer[index+2]);
         if (messageSum != checkSum) {
-            Log.w(TAG, "Checksum invalid (" + messageSum + "), expected " + checkSum);;
+            Timber.w("Checksum invalid (" + messageSum + "), expected " + checkSum);
             return -1;
         }
 
@@ -112,7 +111,7 @@ class GpsParser {
     private void handleGgaMsg(String[] nmea) {
 
         if (nmea.length < 12) {
-            Log.w(TAG, "Invalid GGA_MSG length");
+            Timber.w("Invalid GGA_MSG length");
             return;
         }
 
@@ -134,7 +133,7 @@ class GpsParser {
     private void handleGllMsg(String[] nmea) {
 
         if (nmea.length < 7) {
-            Log.w(TAG, "Invalid GLL_MSG length");
+            Timber.w("Invalid GLL_MSG length");
             return;
         }
 
@@ -153,7 +152,7 @@ class GpsParser {
     private void handleRmcMsg(String[] nmea) {
 
         if (nmea.length < 11) {
-            Log.w(TAG, "Invalid RMC_MSG length");
+            Timber.w("Invalid RMC_MSG length");
             return;
         }
 

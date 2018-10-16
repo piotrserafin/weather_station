@@ -1,7 +1,5 @@
 package pl.piotrserafin.weatherstation.lcd;
 
-import android.util.Log;
-
 import com.google.android.things.pio.Gpio;
 import com.google.android.things.pio.PeripheralManager;
 
@@ -10,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import pl.piotrserafin.weatherstation.utils.RpiSettings;
+import timber.log.Timber;
 
 /**
  * Created by pserafin on 20.03.2018.
@@ -223,7 +222,7 @@ public class Lcd implements AutoCloseable {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
-            Log.e(TAG, e.getMessage());
+            Timber.e(e);
         }
     }
 

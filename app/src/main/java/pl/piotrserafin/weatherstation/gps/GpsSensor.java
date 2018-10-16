@@ -1,7 +1,6 @@
 package pl.piotrserafin.weatherstation.gps;
 
 import android.os.Handler;
-import android.util.Log;
 
 import com.google.android.things.pio.PeripheralManager;
 import com.google.android.things.pio.UartDevice;
@@ -9,6 +8,8 @@ import com.google.android.things.pio.UartDeviceCallback;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import timber.log.Timber;
 
 /**
  * Created by pserafin on 10.04.2018.
@@ -76,7 +77,7 @@ public class GpsSensor implements AutoCloseable {
             try {
                 readBuffer();
             } catch (IOException e) {
-                Log.w(TAG, "Unable to read UART data", e);
+                Timber.w(e, "Unable to read UART data");
             }
 
             return true;
@@ -84,7 +85,7 @@ public class GpsSensor implements AutoCloseable {
 
         @Override
         public void onUartDeviceError(UartDevice uart, int errorCode) {
-            Log.w(TAG, "Error: " + errorCode);
+            Timber.w("Error: %s", errorCode);
         }
     };
 

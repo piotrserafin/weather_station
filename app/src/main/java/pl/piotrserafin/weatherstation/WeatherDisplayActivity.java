@@ -100,7 +100,7 @@ public class WeatherDisplayActivity extends Activity {
 
     private void initButton() {
         try {
-            Timber.d("Registering button driver " + RpiSettings.getButtonGpioName());
+            Timber.d("Registering button driver %s", RpiSettings.getButtonGpioName());
 
             button = new ButtonInputDriver(
                     RpiSettings.getButtonGpioName(),
