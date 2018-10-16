@@ -11,6 +11,8 @@ import com.google.android.things.contrib.driver.button.Button;
 import com.google.android.things.contrib.driver.button.ButtonInputDriver;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import pl.piotrserafin.weatherstation.api.OpenWeatherApiClient;
 import pl.piotrserafin.weatherstation.fsm.State;
@@ -19,6 +21,7 @@ import pl.piotrserafin.weatherstation.gps.Gps;
 import pl.piotrserafin.weatherstation.lcd.Lcd;
 import pl.piotrserafin.weatherstation.model.WeatherData;
 import pl.piotrserafin.weatherstation.sensor.EnvironmentalSensor;
+import pl.piotrserafin.weatherstation.sensor.SensorData;
 import pl.piotrserafin.weatherstation.utils.RpiSettings;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -96,6 +99,17 @@ public class WeatherDisplayActivity extends Activity {
 
         //StateInit -> StateFetchGpsData
         stateContext.takeAction();
+    }
+
+    private void initEnvironmentalSensor() {
+
+        Timber.d("initEnvironmentalSensor");
+
+        try {
+            sensor = new EnvironmentalSensor(RpiSettings.getI2cBusName());
+        } catch (IOException e) {
+            Timber.e(e);
+        }
     }
 
     private void initButton() {
@@ -259,6 +273,7 @@ public class WeatherDisplayActivity extends Activity {
             initButton();
             initLcd();
             initGps();
+            initEnvironmentalSensor();
         }
     }
 
@@ -337,6 +352,11 @@ public class WeatherDisplayActivity extends Activity {
             setLcdMessage("City:");
             setLcdPosition(1,0);
             setLcdMessage(weatherData.getName());
+
+            //TODO: Test for reading BME280 sensor data
+            List<SensorData> sensorsData = new ArrayList<>();
+            sensor.collectData(sensorsData);
+            Timber.d(sensorsData.toString());
         }
     }
 

@@ -26,4 +26,13 @@ public class SensorData {
     public float getValue() {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return "SensorData{" +
+                "timestamp=" + timestamp +
+                ", sensorName='" + sensorName + '\'' +
+                ", value=" + value +
+                '}';
+    }
 }

@@ -16,14 +16,9 @@ public class EnvironmentalSensor implements AutoCloseable {
     private String i2cBus;
     private Bmx280 bmx280;
 
-    public EnvironmentalSensor(String i2cBus) {
+    public EnvironmentalSensor(String i2cBus) throws IOException {
         this.i2cBus = i2cBus;
-
-        try {
-            init();
-        } catch (IOException e) {
-            Timber.e(e);
-        }
+        init();
     }
 
     private void init() throws IOException {
