@@ -3,11 +3,12 @@ package pl.piotrserafin.weatherstation.utils;
 import pl.piotrserafin.weatherstation.lcd.Lcd;
 
 public class RpiSettings {
-    private static final String TAG = "rpi3";
 
     public static String getUartName() {
         return "UART0";
     }
+
+    public static String getI2cBusName() { return "I2C1"; }
 
     public static String getButtonGpioName() { return "BCM23"; }
 
@@ -26,9 +27,7 @@ public class RpiSettings {
             case D7:
                 return "BCM21";
             default:
-                throw new IllegalArgumentException(TAG + ("Unknown Pin" + pin.name() + ")"));
+                throw new IllegalArgumentException("RPI3" + ("Unknown Pin" + pin.name() + ")"));
         }
     }
-
-    public static String getI2cBusName() { return "I2C1"; }
 }

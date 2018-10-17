@@ -20,8 +20,8 @@ import pl.piotrserafin.weatherstation.fsm.StateContext;
 import pl.piotrserafin.weatherstation.gps.Gps;
 import pl.piotrserafin.weatherstation.lcd.Lcd;
 import pl.piotrserafin.weatherstation.model.WeatherData;
-import pl.piotrserafin.weatherstation.sensor.EnvironmentalSensor;
-import pl.piotrserafin.weatherstation.sensor.SensorData;
+import pl.piotrserafin.weatherstation.sensor.Sensor;
+import pl.piotrserafin.weatherstation.model.SensorData;
 import pl.piotrserafin.weatherstation.utils.RpiSettings;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -37,14 +37,13 @@ public class WeatherDisplayActivity extends Activity {
     public static final int UART_BAUD = 9600;
     public static final float ACCURACY = 2.5f;
 
-    //Test Data
-    public static final String WROCLAW_CITY_ID = "3081368"; //Wroclaw OW Id
+    //Test Data (Wroclaw)
     public static final double WROCLAW_LATITUDE = 51.099998;
     public static final double WROCLAW_LONGITUDE = 17.033331;
 
     private Lcd lcd;
     private Gps gps;
-    private EnvironmentalSensor sensor;
+    private Sensor sensor;
 
     private Call<WeatherData> openWeatherCall;
     private Callback<WeatherData> moviesCallback;
@@ -77,9 +76,7 @@ public class WeatherDisplayActivity extends Activity {
         Timber.d("initLcd");
 
         try {
-
             lcd = new Lcd();
-
         } catch (IOException e) {
             Timber.e(e);
         }
@@ -106,21 +103,20 @@ public class WeatherDisplayActivity extends Activity {
         Timber.d("initEnvironmentalSensor");
 
         try {
-            sensor = new EnvironmentalSensor(RpiSettings.getI2cBusName());
+            sensor = new Sensor(RpiSettings.getI2cBusName());
         } catch (IOException e) {
             Timber.e(e);
         }
     }
 
     private void initButton() {
-        try {
-            Timber.d("Registering button driver %s", RpiSettings.getButtonGpioName());
 
-            button = new ButtonInputDriver(
-                    RpiSettings.getButtonGpioName(),
+        Timber.d("Registering button driver %s", RpiSettings.getButtonGpioName());
+
+        try {
+            button = new ButtonInputDriver(RpiSettings.getButtonGpioName(),
                     Button.LogicState.PRESSED_WHEN_LOW,
                     KeyEvent.KEYCODE_SPACE);
-
         } catch (IOException e) {
             Timber.d(e);
         }

@@ -1,4 +1,4 @@
-package pl.piotrserafin.weatherstation.sensor;
+package pl.piotrserafin.weatherstation.model;
 
 public class SensorData {
     private long timestamp;
@@ -29,10 +29,6 @@ public class SensorData {
 
     @Override
     public String toString() {
-        return "SensorData{" +
-                "timestamp=" + timestamp +
-                ", sensorName='" + sensorName + '\'' +
-                ", value=" + value +
-                '}';
+        return sensorName + " [" + timestamp + "] " + value;
     }
 }

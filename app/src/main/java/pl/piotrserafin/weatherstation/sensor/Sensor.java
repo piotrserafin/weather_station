@@ -5,9 +5,10 @@ import com.google.android.things.contrib.driver.bmx280.Bmx280;
 import java.io.IOException;
 import java.util.List;
 
+import pl.piotrserafin.weatherstation.model.SensorData;
 import timber.log.Timber;
 
-public class EnvironmentalSensor implements AutoCloseable {
+public class Sensor implements AutoCloseable {
 
     private static final String TEMPERATURE = "temperature";
     private static final String PRESSURE = "pressure";
@@ -16,7 +17,7 @@ public class EnvironmentalSensor implements AutoCloseable {
     private String i2cBus;
     private Bmx280 bmx280;
 
-    public EnvironmentalSensor(String i2cBus) throws IOException {
+    public Sensor(String i2cBus) throws IOException {
         this.i2cBus = i2cBus;
         init();
     }

@@ -24,9 +24,6 @@ public class OpenWeatherApiClient {
                                             @Query("lon") String longitude,
                                             @Query("appid") String appId);
 
-        @GET("/data/2.5/weather")
-        Call<WeatherData> getCurrentWeather(@Query("id") String cityId,
-                                            @Query("appid") String appId);
     }
 
     private OpenWeatherApiClient() {
@@ -49,9 +46,5 @@ public class OpenWeatherApiClient {
 
     public Call<WeatherData> getCurrentWeather(String latitude, String longitude) {
         return api.getCurrentWeather(latitude, longitude, API_KEY);
-    }
-
-    public Call<WeatherData> getCurrentWeather(String cityId) {
-        return api.getCurrentWeather(cityId, API_KEY);
     }
 }
