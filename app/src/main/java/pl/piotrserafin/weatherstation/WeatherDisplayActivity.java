@@ -43,7 +43,7 @@ public class WeatherDisplayActivity extends Activity {
 
     private Lcd lcd;
     private Gps gps;
-    private Sensor sensor;
+    private SensorHub sensorHub;
 
     private Call<WeatherData> openWeatherCall;
     private Callback<WeatherData> moviesCallback;
@@ -98,15 +98,21 @@ public class WeatherDisplayActivity extends Activity {
         stateContext.takeAction();
     }
 
-    private void initEnvironmentalSensor() {
+    private void initSensorHub() {
 
-        Timber.d("initEnvironmentalSensor");
+        Timber.d("initSensorHub");
+
+        if(sensorHub != null) {
+            sensorHub.stop();
+        }
 
         try {
-            sensor = new Sensor(RpiSettings.getI2cBusName());
+            sensorHub = new SensorHub(new Sensor(RpiSettings.getI2cBusName()));
         } catch (IOException e) {
             Timber.e(e);
         }
+
+        sensorHub.start();
     }
 
     private void initButton() {
@@ -269,7 +275,7 @@ public class WeatherDisplayActivity extends Activity {
             initButton();
             initLcd();
             initGps();
-            initEnvironmentalSensor();
+            initSensorHub();
         }
     }
 
@@ -348,11 +354,6 @@ public class WeatherDisplayActivity extends Activity {
             setLcdMessage("City:");
             setLcdPosition(1,0);
             setLcdMessage(weatherData.getName());
-
-            //TODO: Test for reading BME280 sensor data
-            List<SensorData> sensorsData = new ArrayList<>();
-            sensor.collectData(sensorsData);
-            Timber.d(sensorsData.toString());
         }
     }
 
@@ -418,6 +419,7 @@ public class WeatherDisplayActivity extends Activity {
             closeButton();
             closeGps();
             closeLcd();
+            closeSensorHub();
         }
     }
 
@@ -460,6 +462,12 @@ public class WeatherDisplayActivity extends Activity {
             } finally {
                 button = null;
             }
+        }
+    }
+
+    private void closeSensorHub() {
+        if(sensorHub != null) {
+            sensorHub.stop();
         }
     }
 
