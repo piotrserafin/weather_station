@@ -70,10 +70,6 @@ public class WeatherDisplayActivity extends Activity {
 
         super.onCreate(savedInstanceState);
 
-        stateContext = new StateContext(new StateStart());
-
-        //StateStart -> StateInit
-        stateContext.takeAction();
     }
 
     @Override
@@ -94,6 +90,11 @@ public class WeatherDisplayActivity extends Activity {
             params.saveToPreferences(prefs);
             initSensorHub(params);
         }
+
+        stateContext = new StateContext(new StateStart());
+
+        //StateStart -> StateInit
+        stateContext.takeAction();
     }
 
     private Parameters readParameters(SharedPreferences prefs, Bundle extras) {
