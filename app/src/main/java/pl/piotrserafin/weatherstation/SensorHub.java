@@ -79,7 +79,7 @@ public class SensorHub {
         @Override
         public void run() {
             lastTelemetryRun = SystemClock.uptimeMillis();
-            if (TimerHelper.canExecute("Telemetry loop", ready.get())) {
+            if (TimerHelper.canExecute("Telemetry loop",true)) {
                 try {
                     List<SensorData> currentReadings = collectCurrentSensorsReadings();
                     Timber.d(currentReadings.toString());
