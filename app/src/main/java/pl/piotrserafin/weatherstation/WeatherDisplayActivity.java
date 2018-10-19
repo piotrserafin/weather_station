@@ -1,6 +1,8 @@
 package pl.piotrserafin.weatherstation;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -11,17 +13,17 @@ import com.google.android.things.contrib.driver.button.Button;
 import com.google.android.things.contrib.driver.button.ButtonInputDriver;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.security.GeneralSecurityException;
 
 import pl.piotrserafin.weatherstation.api.OpenWeatherApiClient;
 import pl.piotrserafin.weatherstation.fsm.State;
 import pl.piotrserafin.weatherstation.fsm.StateContext;
 import pl.piotrserafin.weatherstation.gps.Gps;
+import pl.piotrserafin.weatherstation.iotcore.Parameters;
 import pl.piotrserafin.weatherstation.lcd.Lcd;
 import pl.piotrserafin.weatherstation.model.WeatherData;
-import pl.piotrserafin.weatherstation.sensor.Sensor;
-import pl.piotrserafin.weatherstation.model.SensorData;
+import pl.piotrserafin.weatherstation.sensor.Bme280Collector;
+import pl.piotrserafin.weatherstation.utils.AuthKeyGenerator;
 import pl.piotrserafin.weatherstation.utils.RpiSettings;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -34,6 +36,8 @@ import timber.log.Timber;
 
 public class WeatherDisplayActivity extends Activity {
 
+    private static final String CONFIG_SHARED_PREFERENCES_KEY = "cloud_iot_config";
+
     public static final int UART_BAUD = 9600;
     public static final float ACCURACY = 2.5f;
 
@@ -43,6 +47,7 @@ public class WeatherDisplayActivity extends Activity {
 
     private Lcd lcd;
     private Gps gps;
+
     private SensorHub sensorHub;
 
     private Call<WeatherData> openWeatherCall;
@@ -69,6 +74,43 @@ public class WeatherDisplayActivity extends Activity {
 
         //StateStart -> StateInit
         stateContext.takeAction();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Timber.d("onNewIntent");
+        // getIntent() should always return the most recent
+        setIntent(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Timber.d("onResume");
+        SharedPreferences prefs = getSharedPreferences(CONFIG_SHARED_PREFERENCES_KEY, MODE_PRIVATE);
+        Parameters params = readParameters(prefs, getIntent().getExtras());
+        if (params != null) {
+            params.saveToPreferences(prefs);
+            initSensorHub(params);
+        }
+    }
+
+    private Parameters readParameters(SharedPreferences prefs, Bundle extras) {
+        Parameters params = Parameters.from(prefs, extras);
+        if (params == null) {
+            String validAlgorithms = String.join(",",
+                    AuthKeyGenerator.SUPPORTED_KEY_ALGORITHMS);
+            Timber.w("Postponing initialization until enough parameters are set. " +
+                    "Please configure via intent, for example: \n" +
+                    "adb shell am start " +
+                    "-e project_id <PROJECT_ID> -e cloud_region <REGION> " +
+                    "-e registry_id <REGISTRY_ID> -e device_id <DEVICE_ID> " +
+                    "[-e key_algorithm <one of " + validAlgorithms + ">] " +
+                    getPackageName() + "/." +
+                    getLocalClassName() + "\n");
+        }
+        return params;
     }
 
     private void initLcd() {
@@ -98,21 +140,31 @@ public class WeatherDisplayActivity extends Activity {
         stateContext.takeAction();
     }
 
-    private void initSensorHub() {
+    private void initSensorHub(Parameters params) {
 
         Timber.d("initSensorHub");
 
-        if(sensorHub != null) {
+        if (sensorHub != null) {
             sensorHub.stop();
         }
 
-        try {
-            sensorHub = new SensorHub(new Sensor(RpiSettings.getI2cBusName()));
-        } catch (IOException e) {
-            Timber.e(e);
-        }
+        Timber.i("Initialization parameters:\n" +
+                "   Project ID: " + params.getProjectId() + "\n" +
+                "    Region ID: " + params.getCloudRegion() + "\n" +
+                "  Registry ID: " + params.getRegistryId() + "\n" +
+                "    Device ID: " + params.getDeviceId() + "\n" +
+                "Key algorithm: " + params.getKeyAlgorithm());
 
-        sensorHub.start();
+        sensorHub = new SensorHub(params);
+
+        sensorHub.registerSensorCollector(new Bme280Collector(
+                RpiSettings.getI2cBusName()));
+
+        try {
+            sensorHub.start();
+        } catch (GeneralSecurityException | IOException e) {
+            Timber.e(e, "Cannot load keypair");
+        }
     }
 
     private void initButton() {
@@ -275,7 +327,6 @@ public class WeatherDisplayActivity extends Activity {
             initButton();
             initLcd();
             initGps();
-            initSensorHub();
         }
     }
 
@@ -467,6 +518,15 @@ public class WeatherDisplayActivity extends Activity {
 
     private void closeSensorHub() {
         if(sensorHub != null) {
+            sensorHub.stop();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Timber.d("onPause");
+        if (sensorHub != null) {
             sensorHub.stop();
         }
     }

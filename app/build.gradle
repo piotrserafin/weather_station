@@ -34,6 +34,9 @@ dependencies {
     implementation 'com.google.android.things.contrib:driver-button:1.0'
     implementation 'com.google.android.things.contrib:driver-bmx280:1.0'
 
+    //IoT Core SDK
+    implementation 'com.google.android.things:cloud-iot-core:1.0.0'
+
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.4.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.4.0'
