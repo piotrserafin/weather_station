@@ -30,18 +30,13 @@ import timber.log.Timber;
 public class SensorHub {
     private static final String TAG = "sensorhub";
 
-    private static final int DEFAULT_TELEMETRY_PER_HOUR = 60*3; // every 20 seconds
+    private static final int DEFAULT_TELEMETRY_PER_HOUR = 60*6; // every 10 seconds
     private static final int DEFAULT_STATE_UPDATES_PER_HOUR = 60; // every minute
 
     private HandlerThread backgroundThread;
     private Handler eventsHandler;
     private Handler recurrentTasksHandler;
 
-    /**
-     * Version of the configuration reported in the device status state (device to cloud).
-     * Device config messages (cloud to device) should use a version greater than this value,
-     * otherwise it will be ignored.
-     */
     private int configurationVersion;
 
     private int telemetryEventsPerHour;
@@ -66,22 +61,10 @@ public class SensorHub {
         this.collectors = new ArrayList<>();
     }
 
-
-    /**
-     * Register a sensor collector. When the SensorHub is started, it will fetch sensor readings
-     * from the active collectors.
-     *
-     * @param collector
-     */
     public void registerSensorCollector(@NonNull SensorCollector collector) {
         collectors.add(collector);
     }
 
-    /**
-     * Start sensor collection and reporting.
-     * @throws GeneralSecurityException
-     * @throws IOException
-     */
     public void start() throws GeneralSecurityException, IOException {
         initializeIfNeeded();
 
@@ -196,6 +179,7 @@ public class SensorHub {
             Timber.w("Ignoring sensor readings because IotCoreClient is not yet active.");
             return;
         }
+
         TelemetryEvent event = new TelemetryEvent(payload.getBytes(),
                 null, TelemetryEvent.QOS_AT_LEAST_ONCE);
         iotCoreClient.publishTelemetry(event);

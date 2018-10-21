@@ -11,11 +11,6 @@ import pl.piotrserafin.weatherstation.model.SensorData;
 
 public class MessagePayload {
 
-    /**
-     * Serialize a List of SensorData objects into a JSON string, for sending to the cloud
-     * @param data List of SensorData objects to serialize
-     * @return JSON String
-     */
     public static String createTelemetryMessagePayload(List<SensorData> data) {
         try {
             JSONObject messagePayload = new JSONObject();
@@ -34,11 +29,6 @@ public class MessagePayload {
         }
     }
 
-    /**
-     * Compose and serialize some parameters as a JSON string, for sending to the IotCore as a
-     * device state update
-     * @return JSON String
-     */
     public static String createDeviceStateUpdatePayload(int version, int telemetryEventsPerHour,
                                                         int stateUpdatesPerHour, List<String> allSensors, List<String> activeSensors) {
         try {
@@ -54,22 +44,6 @@ public class MessagePayload {
         }
     }
 
-    /**
-     * De-serialize IotCore device configuration message payload as a JSON string.
-     *
-     * Format of the message should be similar to:
-     * <pre>
-     * {
-     *      "version": 1,
-     *      "telemetry-events-per-hour": 20,
-     *      "state-updates-per-hour": 10,
-     *      "active-sensors": ["motion", "temperature"]
-     * }
-     * </pre>
-     *
-     * @param jsonPayload JSON of the device config message
-     * @return JSON String
-     */
     public static DeviceConfig parseDeviceConfigPayload(String jsonPayload) {
         try {
             JSONObject message = new JSONObject(jsonPayload);
