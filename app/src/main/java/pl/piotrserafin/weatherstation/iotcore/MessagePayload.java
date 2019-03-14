@@ -13,17 +13,15 @@ public class MessagePayload {
 
     public static String createTelemetryMessagePayload(List<SensorData> data) {
         try {
-            JSONObject messagePayload = new JSONObject();
-            JSONArray dataArray = new JSONArray();
+            //JSONObject messagePayload = new JSONObject();
+            //JSONArray dataArray = new JSONArray();
+            JSONObject sensor = new JSONObject();
+            sensor.put("timestamp", data.get(0).getTimestamp());
             for (SensorData el : data) {
-                JSONObject sensor = new JSONObject();
-                sensor.put("timestamp_" + el.getSensorName(),
-                        el.getTimestamp());
                 sensor.put(el.getSensorName(), el.getValue());
-                dataArray.put(sensor);
             }
-            messagePayload.put("data", dataArray);
-            return messagePayload.toString();
+            //messagePayload.put("data", sensor);
+            return sensor.toString();
         } catch (JSONException e) {
             throw new IllegalArgumentException("Invalid message", e);
         }
